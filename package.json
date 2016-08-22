@@ -1,0 +1,22 @@
+{
+  "name": "testarmada-magellan-admiral2-plugin",
+  "version": "1.0.0",
+  "description": "Magellan reporter plugin that provides Admiral2 dashboard support",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TestArmada/magellan-admiral2-plugin.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TestArmada/magellan-admiral2-plugin/issues"
+  },
+  "homepage": "https://github.com/TestArmada/magellan-admiral2-plugin#readme",
+  "dependencies": {
+    "q": "^1.4.1"
+  }
+}
