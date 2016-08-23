@@ -1,24 +1,46 @@
 var Q = require("q");
+var fetch = require("node-fetch");
 
 function Reporter() {
 }
 
+var ADMIRAL_URL = process.env.ADMIRAL_URL;
+var ADMIRAL_PROJECT = process.env.ADMIRAL_PROJECT;
+var ADMIRAL_PHASE = process.env.ADMIRAL_PHASE;
+var ADMIRAL_RUN = process.env.ADMIRAL_RUN;
+
 Reporter.prototype = {
 
   initialize: function () {
-    //
-    // TODO: Need to provide and pick up:
-    //
-    // Admiral auth id <-- teamnamePRverify
-    // Admiral token <--- security token
-    // id number for this run <--- token || kajshdflkjhasdf (may come in from the outside due to grid/sharding)
-    //
-
     var deferred = Q.defer();
-    // If we need to initialize admiral2 and get some kind of a job number or similar, do it here.
-    // Q is used to allow for asynchronous operation if the reporter needs it. Magellan calls this
-    // well before any tests actually start running.
-    deferred.resolve();
+
+    console.log("Magellan Admiral2 reporter initializing with settings:");
+    console.log("      URL: " + ADMIRAL_URL);
+    console.log("  project: " + ADMIRAL_PROJECT);
+    console.log("    phase: " + ADMIRAL_PHASE);
+
+    // NOTE: Both of these conditions assume that the *project* and *phase* already exist.
+
+    if (ADMIRAL_RUN) {
+
+      // This magellan instance is contributing to a pre-existing (i.e. scaled) run
+      deferred.resolve();
+
+    } else {
+
+      // We're starting a new run
+      fetch(ADMIRAL_URL + "/api/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run", {
+          method: "POST",
+          body: JSON.stringify({})
+        })
+        .then(function(res) { return res.json() })
+        .then(function(json) {
+          ADMIRAL_RUN = json._id;
+          deferred.resolve();
+        });
+
+    }
+
     return deferred.promise;
   },
 
@@ -55,20 +77,41 @@ Reporter.prototype = {
           resultURL = message.metadata.resultURL ? message.metadata.resultURL : "";
         }
 
+        var result = {
+          test: message.name,
+          environments: {}
+        };
+
         if (message.passed) {
           // We've finished a test and it passed!
-          console.log("Test " + message.name + " has passed in environment: "
-              + test.browser.browserId + " after " + test.attempts + " attempts");
+          result.environments[test.browser.browserId] = {
+            result: "pass",
+            retries: test.attempts,
+            resultURL
+          };
         } else if (test.attempts === test.maxAttempts - 1) {
           // Is this our last attempt ever? Then mark the test as finished and failed.
-          console.log("Test " + message.name + " has finally failed in environment: "
-            + test.browser.browserId + " after " + test.attempts + " attempts");
+          result.environments[test.browser.browserId] = {
+            result: "fail",
+            retries: test.attempts,
+            resultURL
+          };
         } else {
           // We've failed a test and we're going to retry it
-          console.log("Test " + message.name + " has failed in environment: "
-            + test.browser.browserId + " after " + test.attempts
-            + " attempts, and will be retried.");
+          result.environments[test.browser.browserId] = {
+            result: "retry",
+            retries: test.attempts,
+            resultURL
+          };
         }
+
+        fetch(ADMIRAL_URL + "/api/result/" + ADMIRAL_RUN, {
+          method: "POST",
+          body: JSON.stringify(result)
+        })
+        .then(function(res) { return res.json() })
+        .then(function(json) {
+        });
 
       }
     }
