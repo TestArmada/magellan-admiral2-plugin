@@ -29,15 +29,24 @@ Reporter.prototype = {
     } else {
 
       // We're starting a new run
-      fetch(ADMIRAL_URL + "/api/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run", {
+      fetch(ADMIRAL_URL + "/api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run", {
           method: "POST",
           body: JSON.stringify({})
         })
-        .then(function(res) { return res.json() })
+        .then(function(res) {
+          console.log("parsing json data");
+          return res.json();
+        })
         .then(function(json) {
+          console.log("fetching admiral run id");
           ADMIRAL_RUN = json._id;
           deferred.resolve();
-        });
+        })
+        .catch(function (e) {
+          console.log("Exception while initializing run with admiral2: ");
+          console.log(e);
+          deferred.reject();
+        })
 
     }
 
