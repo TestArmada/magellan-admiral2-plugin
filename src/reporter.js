@@ -29,17 +29,17 @@ Reporter.prototype = {
     } else {
 
       // We're starting a new run
-      fetch(ADMIRAL_URL + "/api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run", {
+      fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run", {
+          headers: { "Content-Type": "application/json" },
           method: "POST",
           body: JSON.stringify({})
         })
         .then(function(res) {
-          console.log("parsing json data");
           return res.json();
         })
         .then(function(json) {
-          console.log("fetching admiral run id");
           ADMIRAL_RUN = json._id;
+          console.log("Got admiral run id: " + ADMIRAL_RUN);
           deferred.resolve();
         })
         .catch(function (e) {
@@ -60,8 +60,8 @@ Reporter.prototype = {
   },
 
   _handleMessage: function (test, message) {
-    console.log("admiral reporter received message: ");
-    console.log(message);
+    // console.log("admiral reporter received message: ");
+    // console.log(message);
 
     if (message.type === "worker-status") {
       if (message.status === "started") {
@@ -114,13 +114,26 @@ Reporter.prototype = {
           };
         }
 
-        fetch(ADMIRAL_URL + "/api/result/" + ADMIRAL_RUN, {
+        console.log("Sending to: " + ADMIRAL_URL + "api/result/" + ADMIRAL_RUN);
+        console.log("Sending result object: ", JSON.stringify(result, null, 2));
+
+        fetch(ADMIRAL_URL + "api/result/" + ADMIRAL_RUN, {
+          headers: { "Content-Type": "application/json" },
           method: "POST",
           body: JSON.stringify(result)
         })
-        .then(function(res) { return res.json() })
+        .then(function(res) {
+          console.log("parse json from /result");
+          return res.json();
+        })
         .then(function(json) {
-        });
+          console.log("got json back from /result:", json);
+        })
+        .catch(function (e) {
+          console.log("Exception while sending data to admiral2: ");
+          console.log(e);
+          deferred.reject();
+        })
 
       }
     }
