@@ -23,6 +23,10 @@ Reporter.prototype = {
 
     if (ADMIRAL_RUN) {
 
+      if (ADMIRAL_RUN.indexOf("\"") > -1) {
+        ADMIRAL_RUN = ADMIRAL_RUN.split("\"").join("");
+      }
+
       // This magellan instance is contributing to a pre-existing (i.e. scaled) run
       deferred.resolve();
 
@@ -32,7 +36,7 @@ Reporter.prototype = {
       fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run", {
           headers: { "Content-Type": "application/json" },
           method: "POST",
-          body: JSON.stringify({})
+          body: JSON.stringify({ name: "run " + Math.round(Math.random() * 99999999999).toString(16) })
         })
         .then(function(res) {
           return res.json();
@@ -94,21 +98,21 @@ Reporter.prototype = {
         if (message.passed) {
           // We've finished a test and it passed!
           result.environments[test.browser.browserId] = {
-            result: "pass",
+            status: "pass",
             retries: test.attempts,
             resultURL
           };
         } else if (test.attempts === test.maxAttempts - 1) {
           // Is this our last attempt ever? Then mark the test as finished and failed.
           result.environments[test.browser.browserId] = {
-            result: "fail",
+            status: "fail",
             retries: test.attempts,
             resultURL
           };
         } else {
           // We've failed a test and we're going to retry it
           result.environments[test.browser.browserId] = {
-            result: "retry",
+            status: "retry",
             retries: test.attempts,
             resultURL
           };
