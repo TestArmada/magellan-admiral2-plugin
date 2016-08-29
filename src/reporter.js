@@ -7,7 +7,7 @@ function Reporter() {
 var ADMIRAL_URL = process.env.ADMIRAL_URL;
 var ADMIRAL_PROJECT = process.env.ADMIRAL_PROJECT;
 var ADMIRAL_PHASE = process.env.ADMIRAL_PHASE;
-var ADMIRAL_RUN = process.env.ADMIRAL_RUN;
+var ADMIRAL_RUN = process.env.ADMIRAL_RUN_ID;
 
 Reporter.prototype = {
 
