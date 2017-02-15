@@ -73,7 +73,7 @@ Reporter.prototype = {
 
         if (test.attempts === 0) {
           console.log("Test starting: " + message.name + " in environment: "
-            + test.browser.browserId);
+            + test.profile.id);
         } else {
           // Admiral1 didn't support signaling that a retry had actually *started*. It only
           // supports the notion of a retry being *queued* at time of failure. See below for more.
@@ -97,21 +97,21 @@ Reporter.prototype = {
 
         if (message.passed) {
           // We've finished a test and it passed!
-          result.environments[test.browser.browserId] = {
+          result.environments[test.profile.id] = {
             status: "pass",
             retries: test.attempts,
             resultURL
           };
         } else if (test.attempts === test.maxAttempts - 1) {
           // Is this our last attempt ever? Then mark the test as finished and failed.
-          result.environments[test.browser.browserId] = {
+          result.environments[test.profile.id] = {
             status: "fail",
             retries: test.attempts,
             resultURL
           };
         } else {
           // We've failed a test and we're going to retry it
-          result.environments[test.browser.browserId] = {
+          result.environments[test.profile.id] = {
             status: "retry",
             retries: test.attempts,
             resultURL
