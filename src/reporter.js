@@ -1,5 +1,6 @@
 var Q = require("q");
 var fetch = require("node-fetch");
+var logger = require("./logger");
 
 function Reporter() {
 }
@@ -20,13 +21,13 @@ Reporter.prototype = {
   initialize: function () {
     var deferred = Q.defer();
 
-    console.log("Magellan Admiral2 reporter initializing" + (isSharded ? " in sharded mode " : " ")+ "with settings:");
-    console.log("              URL: " + ADMIRAL_URL);
-    console.log("          project: " + ADMIRAL_PROJECT);
-    console.log("            phase: " + ADMIRAL_PHASE);
+    logger.log("Magellan Admiral2 reporter initializing" + (isSharded ? " in sharded mode " : " ")+ "with settings:");
+    logger.log("              URL: " + ADMIRAL_URL);
+    logger.log("          project: " + ADMIRAL_PROJECT);
+    logger.log("            phase: " + ADMIRAL_PHASE);
 
     if (isSharded) {
-      console.log("      run (shard): " + ADMIRAL_RUN);
+      logger.log("      run (shard): " + ADMIRAL_RUN);
     }
 
     // Bootstrap this project if it doesn't already exist
@@ -69,15 +70,15 @@ Reporter.prototype = {
               // We ignore id that comes back since we're using our own ADMIRAL_RUN value and assuming sharding
               if (!isSharded) {
                 ADMIRAL_RUN = json._id;
-                console.log("Got admiral run id: " + ADMIRAL_RUN);
+                logger.log("Got admiral run id: " + ADMIRAL_RUN);
               } else {
-                console.log("Assumed admiral run id (in sharded mode): " + json._id);
+                logger.log("Assumed admiral run id (in sharded mode): " + json._id);
               }
               deferred.resolve();
             })
             .catch(function (e) {
-              console.log("Exception while initializing run with Admiral2: ");
-              console.log(e);
+              logger.err("Exception while initializing run with Admiral2: ");
+              logger.err(e);
               deferred.reject();
             });
 
@@ -103,8 +104,10 @@ Reporter.prototype = {
         // An individual test has started running
 
         if (test.attempts === 0) {
-          console.log("Test starting: " + message.name + " in environment: "
+          if (debugMode) {
+            logger.log("Test starting: " + message.name + " in environment: "
             + test.profile.id);
+          }
         } else {
           // Admiral1 didn't support signaling that a retry had actually *started*. It only
           // supports the notion of a retry being *queued* at time of failure. See below for more.
@@ -154,8 +157,8 @@ Reporter.prototype = {
         }
 
         if (debugMode) {
-          console.log("Sending to: " + ADMIRAL_URL + "api/result/" + ADMIRAL_RUN);
-          console.log("Sending result object: ", JSON.stringify(result, null, 2));
+          logger.log("Sending to: " + ADMIRAL_URL + "api/result/" + ADMIRAL_RUN);
+          logger.log("Sending result object: ", JSON.stringify(result, null, 2));
         }
 
         fetch(ADMIRAL_URL + "api/result/" + ADMIRAL_RUN, {
@@ -165,18 +168,18 @@ Reporter.prototype = {
         })
         .then(function(res) {
           if (debugMode) {
-            console.log("parse json from /result");
+            logger.log("parse json from /result");
           }
           return res.json();
         })
         .then(function(json) {
           if (debugMode) {
-            console.log("got json back from /result:", json);
+            logger.log("got json back from /result:", json);
           }
         })
         .catch(function (e) {
-          console.log("Exception while sending data to admiral2: ");
-          console.log(e);
+          logger.err("Exception while sending data to admiral2: ");
+          logger.err(e);
           deferred.reject();
         })
 
@@ -186,7 +189,7 @@ Reporter.prototype = {
 
   flush: function () {
     // This runs only once and only at the very end when we're shutting down all the reporters
-    console.log("Admiral2 reporter shutting down.");
+    logger.log("Admiral2 reporter shutting down.");
   }
 };
 

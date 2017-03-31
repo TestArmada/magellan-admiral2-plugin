@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/TestArmada/magellan-admiral2-plugin#readme",
   "dependencies": {
+    "cli-color": "^1.2.0",
     "mocha": "^3.2.0",
     "node-fetch": "^1.5.3",
     "q": "^1.4.1"
