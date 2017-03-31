@@ -13,7 +13,6 @@ var ADMIRAL_PHASE = process.env.ADMIRAL_PHASE;
 var ADMIRAL_RUN = process.env.ADMIRAL_RUN_ID;
 var ADMIRAL_CI_BUILD_URL = process.env.ADMIRAL_CI_BUILD_URL;
 var ADMIRAL_RUN_DISPLAY_NAME = process.env.ADMIRAL_RUN_DISPLAY_NAME;
-var debugMode = process.env.ADMIRAL_REPORTER_DEBUG ? true : false;
 var isSharded = process.env.ADMIRAL_RUN_ID ? true : false;
 
 Reporter.prototype = {
@@ -104,10 +103,8 @@ Reporter.prototype = {
         // An individual test has started running
 
         if (test.attempts === 0) {
-          if (debugMode) {
-            logger.log("Test starting: " + message.name + " in environment: "
+          logger.debug("Test starting: " + message.name + " in environment: "
             + test.profile.id);
-          }
         } else {
           // Admiral1 didn't support signaling that a retry had actually *started*. It only
           // supports the notion of a retry being *queued* at time of failure. See below for more.
@@ -156,10 +153,8 @@ Reporter.prototype = {
           };
         }
 
-        if (debugMode) {
-          logger.log("Sending to: " + ADMIRAL_URL + "api/result/" + ADMIRAL_RUN);
-          logger.log("Sending result object: ", JSON.stringify(result, null, 2));
-        }
+        logger.debug("Sending to: " + ADMIRAL_URL + "api/result/" + ADMIRAL_RUN);
+        logger.debug("Sending result object: ", JSON.stringify(result, null, 2));
 
         fetch(ADMIRAL_URL + "api/result/" + ADMIRAL_RUN, {
           headers: { "Content-Type": "application/json" },
@@ -167,15 +162,11 @@ Reporter.prototype = {
           body: JSON.stringify(result)
         })
         .then(function(res) {
-          if (debugMode) {
-            logger.log("parse json from /result");
-          }
+          logger.debug("parse json from /result");
           return res.json();
         })
         .then(function(json) {
-          if (debugMode) {
-            logger.log("got json back from /result:", json);
-          }
+          logger.debug("got json back from /result:", json);
         })
         .catch(function (e) {
           logger.err("Exception while sending data to admiral2: ");
