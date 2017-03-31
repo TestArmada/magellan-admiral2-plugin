@@ -10,7 +10,7 @@ This is a plugin to allow `magellan` test runs to report to the Admiral2 dashboa
 |---|---|---|---|
 |ADMIRAL_URL|required|The URL of the Admiral2 server|i.e `http://host-where-admiral-lives:3000/`|
 |ADMIRAL_PROJECT|required|An identifier for a project|i.e. `main-app`, `blog`, `product-page`, etc|
-|ADMIRAL_PHASE|required|A lifecycle phase descriptor like `pr-verify`, `master-verify`, etc|``|
+|ADMIRAL_PHASE|required|A lifecycle phase or build type descriptor|i.e. `pr-verify`, `master-verify`, etc|
 |ADMIRAL_CI_BUILD_URL|optional|An URL to a CI report for this run|`http://travis-ci.org/SomeOrg/someproject/builds/189605665`|
 |ADMIRAL_RUN_DISPLAY_NAME|optional|A description of the build that a given run represents|i.e `PR #26 - add unit tests`|
 |ADMIRAL_RUN_ID|optional|A unique identifier to tie together multiple parallel instances of the reporter into a single report|a uuid string, i.e. `462E43EA-002B-4F4B-A711-261B9894E4AA`|
