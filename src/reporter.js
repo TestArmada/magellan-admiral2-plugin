@@ -1,4 +1,5 @@
 var Q = require("q");
+var _ = require("lodash");
 var fetch = require("node-fetch");
 var logger = require("./logger");
 
@@ -19,15 +20,31 @@ Reporter.prototype = {
 
   initialize: function () {
     var deferred = Q.defer();
+    var self = this;
 
-    logger.log("Magellan Admiral2 reporter initializing" + (isSharded ? " in sharded mode " : " ")+ "with settings:");
-    logger.log("              URL: " + ADMIRAL_URL);
-    logger.log("          project: " + ADMIRAL_PROJECT);
-    logger.log("            phase: " + ADMIRAL_PHASE);
+    this.results = {};
+    this.runOptions = {
+      name: ADMIRAL_RUN_DISPLAY_NAME || ("run " + Math.round(Math.random() * 99999999999).toString(16)),
+      result: "pending"
+    };
 
     if (isSharded) {
-      logger.log("      run (shard): " + ADMIRAL_RUN);
+      // Force the run id if we are participating in a build where multiple shards
+      // contribute to the same Admiral2 run result.
+      this.runOptions._id = ADMIRAL_RUN;
     }
+
+    logger.log("Admiral2 reporter initializing" + (isSharded ? " in sharded mode " : " ")+ "with settings:");
+    logger.log("{");
+    logger.log("  URL: " + ADMIRAL_URL);
+    logger.log("  project: " + ADMIRAL_PROJECT);
+    logger.log("  phase: " + ADMIRAL_PHASE);
+    
+    if (isSharded) {
+      logger.log(" run (shard): " + ADMIRAL_RUN);
+    }
+
+    logger.log("}");
 
     // Bootstrap this project if it doesn't already exist
     fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT, {
@@ -44,22 +61,12 @@ Reporter.prototype = {
           body: JSON.stringify({})
         })
         .then(function(res) {
-          
-          var runOptions = {
-            name: ADMIRAL_RUN_DISPLAY_NAME || ("run " + Math.round(Math.random() * 99999999999).toString(16))
-          };
-
-          if (isSharded) {
-            // Force the run id if we are participating in a build where multiple shards
-            // contribute to the same Admiral2 run result.
-            runOptions._id = ADMIRAL_RUN;
-          }
-
+        
           // Bootstrap a new run or assume an existing run
           fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run", {
               headers: { "Content-Type": "application/json" },
               method: "POST",
-              body: JSON.stringify(runOptions)
+              body: JSON.stringify(self.runOptions)
             })
             .then(function(res) {
               return res.json();
@@ -98,6 +105,8 @@ Reporter.prototype = {
   },
 
   _handleMessage: function (test, message) {
+    var self = this;
+
     if (message.type === "worker-status") {
       if (message.status === "started") {
         // An individual test has started running
@@ -153,6 +162,11 @@ Reporter.prototype = {
           };
         }
 
+        if(!self.results[message.name]){
+          self.results[message.name] = {};
+        }
+        _.merge(self.results[message.name], result.environments);
+
         logger.debug("Sending to: " + ADMIRAL_URL + "api/result/" + ADMIRAL_RUN);
         logger.debug("Sending result object: ", JSON.stringify(result, null, 2));
 
@@ -171,7 +185,6 @@ Reporter.prototype = {
         .catch(function (e) {
           logger.err("Exception while sending data to admiral2: ");
           logger.err(e);
-          deferred.reject();
         })
 
       }
@@ -180,7 +193,37 @@ Reporter.prototype = {
 
   flush: function () {
     // This runs only once and only at the very end when we're shutting down all the reporters
-    logger.log("Admiral2 reporter shutting down.");
+    var deferred = Q.defer();
+    var self = this;
+
+    // finalize test run status
+    self.runOptions.result = "pass";
+
+    _.forEach(self.results, function(value){
+      _.forEach(value, function(innerValue){
+        if(innerValue.status === "fail"){
+          self.runOptions.result = "fail";
+        }
+      });
+    });
+
+    fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run/" + ADMIRAL_RUN + "/finish", {
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+      body: JSON.stringify(self.runOptions)
+    })
+    .then(function (res) {
+      var reportURL = ADMIRAL_URL + "run/" + ADMIRAL_RUN;
+      logger.log("Visualized test suite results available at: " + reportURL);
+      return deferred.resolve();
+    })
+    .catch(function (e) {
+      logger.err("Exception while finalizing run with Admiral2: ");
+      logger.err(e);
+      return deferred.reject();
+    });
+
+    return deferred.promise;
   }
 };
 

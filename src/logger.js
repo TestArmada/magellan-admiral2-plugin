@@ -4,7 +4,7 @@ const util = require("util");
 const clc = require("cli-color");
 const debug = process.env.ADMIRAL_REPORTER_DEBUG ? true : false;
 
-const PREFIX = "Magellan Admiral2 Plugin";
+const PREFIX = "Admiral2 Plugin";
 
 module.exports = {
   output: console,
