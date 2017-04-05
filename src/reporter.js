@@ -22,6 +22,7 @@ Reporter.prototype = {
     var deferred = Q.defer();
     var self = this;
 
+    this.ignoreMessages = false;
     this.results = {};
     this.runOptions = {
       name: ADMIRAL_RUN_DISPLAY_NAME || ("run " + Math.round(Math.random() * 99999999999).toString(16)),
@@ -34,66 +35,95 @@ Reporter.prototype = {
       this.runOptions._id = ADMIRAL_RUN;
     }
 
-    logger.log("Admiral2 reporter initializing" + (isSharded ? " in sharded mode " : " ")+ "with settings:");
-    logger.log("{");
-    logger.log("  URL: " + ADMIRAL_URL);
-    logger.log("  project: " + ADMIRAL_PROJECT);
-    logger.log("  phase: " + ADMIRAL_PHASE);
-    
-    if (isSharded) {
-      logger.log(" run (shard): " + ADMIRAL_RUN);
-    }
+    if (!ADMIRAL_URL) {
 
-    logger.log("}");
+      this.ignoreMessages = true;
+      logger.err("ADMIRAL_URL needs to be an absolute url");
+      logger.warn("All following messages would be ignored");
+      deferred.reject();
+    } else if (!ADMIRAL_PROJECT) {
 
-    // Bootstrap this project if it doesn't already exist
-    fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT, {
+      this.ignoreMessages = true;
+      logger.err("ADMIRAL_PROJECT cannot be null or undefined");
+      logger.warn("All following messages would be ignored");
+      deferred.reject();
+    } else if (!ADMIRAL_PHASE) {
+
+      this.ignoreMessages = true;
+      logger.err("ADMIRAL_PHASE cannot be null or undefined");
+      logger.warn("All following messages would be ignored");
+      deferred.reject();
+    } else {
+
+      logger.log("Admiral2 reporter initializing" + (isSharded ? " in sharded mode " : " ") + "with settings:");
+      logger.log("  URL: " + ADMIRAL_URL);
+      logger.log("  project: " + ADMIRAL_PROJECT);
+      logger.log("  phase: " + ADMIRAL_PHASE);
+
+      if (isSharded) {
+        logger.log("  run (shard): " + ADMIRAL_RUN);
+      }
+
+      // Bootstrap this project if it doesn't already exist
+      fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT, {
         headers: { "Content-Type": "application/json" },
         method: "POST",
         body: JSON.stringify({})
       })
-      .then(function(res) {
+        .then(function (res) {
 
-        // Bootstrap this phase if it doesn't already exist
-        fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE, {
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-          body: JSON.stringify({})
-        })
-        .then(function(res) {
-        
-          // Bootstrap a new run or assume an existing run
-          fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run", {
-              headers: { "Content-Type": "application/json" },
-              method: "POST",
-              body: JSON.stringify(self.runOptions)
-            })
-            .then(function(res) {
-              return res.json();
-            })
-            .then(function(json) {
-              // NOTE: We no longer set ADMIRAL_RUN to json._id
-              // We ignore id that comes back since we're using our own ADMIRAL_RUN value and assuming sharding
-              if (!isSharded) {
-                ADMIRAL_RUN = json._id;
-                logger.log("Got admiral run id: " + ADMIRAL_RUN);
-              } else {
-                logger.log("Assumed admiral run id (in sharded mode): " + json._id);
-              }
-              deferred.resolve();
+          // Bootstrap this phase if it doesn't already exist
+          fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE, {
+            headers: { "Content-Type": "application/json" },
+            method: "POST",
+            body: JSON.stringify({})
+          })
+            .then(function (res) {
+
+              // Bootstrap a new run or assume an existing run
+              fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run", {
+                headers: { "Content-Type": "application/json" },
+                method: "POST",
+                body: JSON.stringify(self.runOptions)
+              })
+                .then(function (res) {
+                  return res.json();
+                })
+                .then(function (json) {
+                  // NOTE: We no longer set ADMIRAL_RUN to json._id
+                  // We ignore id that comes back since we're using our own ADMIRAL_RUN value and assuming sharding
+                  if (!isSharded) {
+                    ADMIRAL_RUN = json._id;
+                    logger.log("Got admiral run id: " + ADMIRAL_RUN);
+                  } else {
+                    logger.log("Assumed admiral run id (in sharded mode): " + json._id);
+                  }
+                  return deferred.resolve();
+                })
+                .catch(function (e) {
+                  self.ignoreMessages = true;
+                  logger.err("Exception while initializing run with Admiral2: ");
+                  logger.err(e);
+                  logger.warn("All following messages would be ignored");
+                  return deferred.reject();
+                });
             })
             .catch(function (e) {
+              self.ignoreMessages = true;
               logger.err("Exception while initializing run with Admiral2: ");
               logger.err(e);
-              deferred.reject();
+              logger.warn("All following messages would be ignored");
+              return deferred.reject();
             });
-
-          return res.json();
+        })
+        .catch(function (e) {
+          self.ignoreMessages = true;
+          logger.err("Exception while initializing run with Admiral2: ");
+          logger.err(e);
+          logger.warn("All following messages would be ignored");
+          return deferred.reject();
         });
-        
-        return res.json();
-      });
-
+    }
 
     return deferred.promise;
   },
@@ -106,6 +136,11 @@ Reporter.prototype = {
 
   _handleMessage: function (test, message) {
     var self = this;
+
+    if (this.ignoreMessages) {
+      logger.debug("message ignored");
+      return;
+    }
 
     if (message.type === "worker-status") {
       if (message.status === "started") {
@@ -162,7 +197,7 @@ Reporter.prototype = {
           };
         }
 
-        if(!self.results[message.name]){
+        if (!self.results[message.name]) {
           self.results[message.name] = {};
         }
         _.merge(self.results[message.name], result.environments);
@@ -175,17 +210,17 @@ Reporter.prototype = {
           method: "POST",
           body: JSON.stringify(result)
         })
-        .then(function(res) {
-          logger.debug("parse json from /result");
-          return res.json();
-        })
-        .then(function(json) {
-          logger.debug("got json back from /result:", json);
-        })
-        .catch(function (e) {
-          logger.err("Exception while sending data to admiral2: ");
-          logger.err(e);
-        })
+          .then(function (res) {
+            logger.debug("parse json from /result");
+            return res.json();
+          })
+          .then(function (json) {
+            logger.debug("got json back from /result:", json);
+          })
+          .catch(function (e) {
+            logger.err("Exception while sending data to admiral2: ");
+            logger.err(e);
+          })
 
       }
     }
@@ -196,32 +231,37 @@ Reporter.prototype = {
     var deferred = Q.defer();
     var self = this;
 
-    // finalize test run status
-    self.runOptions.result = "pass";
+    if (this.ignoreMessages) {
+      logger.debug("flush ignored");
+      deferred.resolve();
+    } else {
+      // finalize test run status
+      self.runOptions.result = "pass";
 
-    _.forEach(self.results, function(value){
-      _.forEach(value, function(innerValue){
-        if(innerValue.status === "fail"){
-          self.runOptions.result = "fail";
-        }
+      _.forEach(self.results, function (value) {
+        _.forEach(value, function (innerValue) {
+          if (innerValue.status === "fail") {
+            self.runOptions.result = "fail";
+          }
+        });
       });
-    });
 
-    fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run/" + ADMIRAL_RUN + "/finish", {
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-      body: JSON.stringify(self.runOptions)
-    })
-    .then(function (res) {
-      var reportURL = ADMIRAL_URL + "run/" + ADMIRAL_RUN;
-      logger.log("Visualized test suite results available at: " + reportURL);
-      return deferred.resolve();
-    })
-    .catch(function (e) {
-      logger.err("Exception while finalizing run with Admiral2: ");
-      logger.err(e);
-      return deferred.reject();
-    });
+      fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run/" + ADMIRAL_RUN + "/finish", {
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+        body: JSON.stringify(self.runOptions)
+      })
+        .then(function (res) {
+          var reportURL = ADMIRAL_URL + "run/" + ADMIRAL_RUN;
+          logger.log("Visualized test suite results available at: " + reportURL);
+          return deferred.resolve();
+        })
+        .catch(function (e) {
+          logger.err("Exception while finalizing run with Admiral2: ");
+          logger.err(e);
+          return deferred.reject();
+        });
+    }
 
     return deferred.promise;
   }
