@@ -214,7 +214,7 @@ Reporter.prototype = {
     })
     .then(function (res) {
       var reportURL = ADMIRAL_URL + "run/" + ADMIRAL_RUN;
-      logger.log("Visual report matrix available at: " + reportURL);
+      logger.log("Visualized test suite results available at: " + reportURL);
       return deferred.resolve();
     })
     .catch(function (e) {
