@@ -15,7 +15,6 @@ var ADMIRAL_RUN = process.env.ADMIRAL_RUN_ID;
 var ADMIRAL_CI_BUILD_URL = process.env.ADMIRAL_CI_BUILD_URL;
 var ADMIRAL_RUN_DISPLAY_NAME = process.env.ADMIRAL_RUN_DISPLAY_NAME;
 var isSharded = process.env.ADMIRAL_RUN_ID ? true : false;
-var ignoreInitializationErrors = !!process.env.ADMIRAL_IGNORE_INIT_ERRORS;
 
 Reporter.prototype = {
 
