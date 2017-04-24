@@ -19,7 +19,7 @@
   "dependencies": {
     "cli-color": "^1.2.0",
     "lodash": "^4.17.4",
-    "mocha": "^3.2.0",
+    "mocha": "^3.3.0",
     "node-fetch": "^1.5.3",
     "q": "^1.4.1"
   }
