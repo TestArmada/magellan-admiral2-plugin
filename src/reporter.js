@@ -39,19 +39,19 @@ Reporter.prototype = {
 
       this.ignoreMessages = true;
       logger.err("ADMIRAL_URL needs to be an absolute url");
-      logger.warn("All following messages would be ignored");
+      logger.warn("All following messages will be ignored");
       deferred.reject();
     } else if (!ADMIRAL_PROJECT) {
 
       this.ignoreMessages = true;
       logger.err("ADMIRAL_PROJECT cannot be null or undefined");
-      logger.warn("All following messages would be ignored");
+      logger.warn("All following messages will be ignored");
       deferred.reject();
     } else if (!ADMIRAL_PHASE) {
 
       this.ignoreMessages = true;
       logger.err("ADMIRAL_PHASE cannot be null or undefined");
-      logger.warn("All following messages would be ignored");
+      logger.warn("All following messages will be ignored");
       deferred.reject();
     } else {
 
@@ -104,7 +104,7 @@ Reporter.prototype = {
                   self.ignoreMessages = true;
                   logger.err("Exception while initializing run with Admiral2: ");
                   logger.err(e);
-                  logger.warn("All following messages would be ignored");
+                  logger.warn("All following messages will be ignored");
                   return deferred.reject();
                 });
             })
@@ -112,7 +112,7 @@ Reporter.prototype = {
               self.ignoreMessages = true;
               logger.err("Exception while initializing run with Admiral2: ");
               logger.err(e);
-              logger.warn("All following messages would be ignored");
+              logger.warn("All following messages will be ignored");
               return deferred.reject();
             });
         })
@@ -120,7 +120,7 @@ Reporter.prototype = {
           self.ignoreMessages = true;
           logger.err("Exception while initializing run with Admiral2: ");
           logger.err(e);
-          logger.warn("All following messages would be ignored");
+          logger.warn("All following messages will be ignored");
           return deferred.reject();
         });
     }
@@ -218,7 +218,7 @@ Reporter.prototype = {
             logger.debug("got json back from /result:", json);
           })
           .catch(function (e) {
-            logger.err("Exception while sending data to admiral2: ");
+            logger.err("Exception while sending data to Admiral2: ");
             logger.err(e);
           })
 
