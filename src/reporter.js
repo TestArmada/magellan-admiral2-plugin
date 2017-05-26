@@ -98,6 +98,7 @@ Reporter.prototype = {
                   } else {
                     logger.log("Assumed admiral run id (in sharded mode): " + json._id);
                   }
+                  self.showReportURL();
                   return deferred.resolve();
                 })
                 .catch(function (e) {
@@ -226,6 +227,11 @@ Reporter.prototype = {
     }
   },
 
+  showReportURL: function () {
+    var reportURL = ADMIRAL_URL + "run/" + ADMIRAL_RUN;
+    logger.log("Visualized test suite results available at: " + reportURL);
+  },
+
   flush: function () {
     // This runs only once and only at the very end when we're shutting down all the reporters
     var deferred = Q.defer();
@@ -252,8 +258,7 @@ Reporter.prototype = {
         body: JSON.stringify(self.runOptions)
       })
         .then(function (res) {
-          var reportURL = ADMIRAL_URL + "run/" + ADMIRAL_RUN;
-          logger.log("Visualized test suite results available at: " + reportURL);
+          self.showReportURL();
           return deferred.resolve();
         })
         .catch(function (e) {
