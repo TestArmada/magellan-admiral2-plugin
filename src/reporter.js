@@ -1,7 +1,12 @@
 var Q = require("q");
 var _ = require("lodash");
-var fetch = require("node-fetch");
 var logger = require("./logger");
+
+var RCH = require("request-capture-har");
+var requestCaptureHar = new RCH(require("request"));
+var harFilename = "./admiral-reporter-http-traffic.har";
+
+var project = require("../package.json");
 
 function Reporter() {
 }
@@ -15,6 +20,8 @@ var ADMIRAL_RUN = process.env.ADMIRAL_RUN_ID;
 var ADMIRAL_CI_BUILD_URL = process.env.ADMIRAL_CI_BUILD_URL;
 var ADMIRAL_RUN_DISPLAY_NAME = process.env.ADMIRAL_RUN_DISPLAY_NAME;
 var isSharded = process.env.ADMIRAL_RUN_ID ? true : false;
+
+var ADMIRAL_HAR_DEBUG = process.env.ADMIRAL_HAR_DEBUG ? true : false;
 
 Reporter.prototype = {
 
@@ -55,7 +62,7 @@ Reporter.prototype = {
       deferred.reject();
     } else {
 
-      logger.log("Admiral2 reporter initializing" + (isSharded ? " in sharded mode " : " ") + "with settings:");
+      logger.log("Admiral2 reporter v" + project.version + " initializing" + (isSharded ? " in sharded mode " : " ") + "with settings:");
       logger.log("  URL: " + ADMIRAL_URL);
       logger.log("  project: " + ADMIRAL_PROJECT);
       logger.log("  phase: " + ADMIRAL_PHASE);
@@ -64,65 +71,73 @@ Reporter.prototype = {
         logger.log("  run (shard): " + ADMIRAL_RUN);
       }
 
-      // Bootstrap this project if it doesn't already exist
-      fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT, {
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-        body: JSON.stringify({})
-      })
-        .then(function (res) {
+      try {
+        // Bootstrap this project if it doesn't already exist
+        requestCaptureHar.request(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT, {
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+          timeout: 5000,
+          body: {},
+          json: true
+        }, function (error, res, json) {
+          if (error) {
+            self.ignoreMessages = true;
+            logger.err("Exception while initializing run with Admiral2: ");
+            logger.err(error);
+            logger.warn("All following messages would be ignored");
+            return deferred.reject();
+          }
 
           // Bootstrap this phase if it doesn't already exist
-          fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE, {
+          return requestCaptureHar.request({
+            url: ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE,
             headers: { "Content-Type": "application/json" },
             method: "POST",
-            body: JSON.stringify({})
-          })
-            .then(function (res) {
-
-              // Bootstrap a new run or assume an existing run
-              fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run", {
-                headers: { "Content-Type": "application/json" },
-                method: "POST",
-                body: JSON.stringify(self.runOptions)
-              })
-                .then(function (res) {
-                  return res.json();
-                })
-                .then(function (json) {
-                  // NOTE: We no longer set ADMIRAL_RUN to json._id
-                  // We ignore id that comes back since we're using our own ADMIRAL_RUN value and assuming sharding
-                  if (!isSharded) {
-                    ADMIRAL_RUN = json._id;
-                    logger.log("Got admiral run id: " + ADMIRAL_RUN);
-                  } else {
-                    logger.log("Assumed admiral run id (in sharded mode): " + json._id);
-                  }
-                  return deferred.resolve();
-                })
-                .catch(function (e) {
-                  self.ignoreMessages = true;
-                  logger.err("Exception while initializing run with Admiral2: ");
-                  logger.err(e);
-                  logger.warn("All following messages would be ignored");
-                  return deferred.reject();
-                });
-            })
-            .catch(function (e) {
+            body: {},
+            json: true
+          }, function (error, res, json) {
+            if (error) {
               self.ignoreMessages = true;
               logger.err("Exception while initializing run with Admiral2: ");
-              logger.err(e);
+              logger.err(error);
               logger.warn("All following messages would be ignored");
               return deferred.reject();
+            }
+
+            // Bootstrap a new run or assume an existing run
+            return requestCaptureHar.request({
+              url: ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run",
+              headers: { "Content-Type": "application/json" },
+              method: "POST",
+              body: self.runOptions,
+              json: true
+            }, function (error, res, json) {
+              if (error) {
+                self.ignoreMessages = true;
+                logger.err("Exception while initializing run with Admiral2: ");
+                logger.err(error);
+                logger.warn("All following messages would be ignored");
+                return deferred.reject();
+              }
+
+              // NOTE: We no longer set ADMIRAL_RUN to json._id
+              // We ignore id that comes back since we're using our own ADMIRAL_RUN value and assuming sharding
+              if (!isSharded) {
+                ADMIRAL_RUN = json._id;
+                logger.log("Got admiral run id: " + ADMIRAL_RUN);
+              } else {
+                logger.log("Assumed admiral run id (in sharded mode): " + json._id);
+              }
+              return deferred.resolve();
             });
-        })
-        .catch(function (e) {
-          self.ignoreMessages = true;
-          logger.err("Exception while initializing run with Admiral2: ");
-          logger.err(e);
-          logger.warn("All following messages would be ignored");
-          return deferred.reject();
+          });
         });
+
+      } catch(e) {
+        console.log("ERROR initializing Admiral2 reporter:");
+        console.log(e);
+        console.log(e.stack);
+      }
     }
 
     return deferred.promise;
@@ -205,22 +220,20 @@ Reporter.prototype = {
         logger.debug("Sending to: " + ADMIRAL_URL + "api/result/" + ADMIRAL_RUN);
         logger.debug("Sending result object: ", JSON.stringify(result, null, 2));
 
-        fetch(ADMIRAL_URL + "api/result/" + ADMIRAL_RUN, {
+        requestCaptureHar.request({
+          url: ADMIRAL_URL + "api/result/" + ADMIRAL_RUN,
           headers: { "Content-Type": "application/json" },
           method: "POST",
-          body: JSON.stringify(result)
-        })
-          .then(function (res) {
-            logger.debug("parse json from /result");
-            return res.json();
-          })
-          .then(function (json) {
-            logger.debug("got json back from /result:", json);
-          })
-          .catch(function (e) {
+          body: result,
+          json: true
+        }, function (error, res, json) {
+          if (error) {
             logger.err("Exception while sending data to admiral2: ");
             logger.err(e);
-          })
+            return;
+          }
+          logger.debug("got json back from /result:", json);
+        });
 
       }
     }
@@ -246,21 +259,32 @@ Reporter.prototype = {
         });
       });
 
-      fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run/" + ADMIRAL_RUN + "/finish", {
+      requestCaptureHar.request(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run/" + ADMIRAL_RUN + "/finish", {
         headers: { "Content-Type": "application/json" },
         method: "POST",
-        body: JSON.stringify(self.runOptions)
-      })
-        .then(function (res) {
-          var reportURL = ADMIRAL_URL + "run/" + ADMIRAL_RUN;
-          logger.log("Visualized test suite results available at: " + reportURL);
-          return deferred.resolve();
-        })
-        .catch(function (e) {
+        body: self.runOptions,
+        json: true
+      }, function (error, res, json) {
+        if (error) {
           logger.err("Exception while finalizing run with Admiral2: ");
           logger.err(e);
+          logger.err(e.stack);
+          if (ADMIRAL_HAR_DEBUG) {
+            requestCaptureHar.saveHar(harFilename);
+            requestCaptureHar.clear();
+          }
           return deferred.reject();
-        });
+        }
+
+        var reportURL = ADMIRAL_URL + "run/" + ADMIRAL_RUN;
+        logger.log("Visualized test suite results available at: " + reportURL);
+        if (ADMIRAL_HAR_DEBUG) {
+          requestCaptureHar.saveHar(harFilename);
+          requestCaptureHar.clear();
+        }
+        return deferred.resolve();
+      });
+
     }
 
     return deferred.promise;
