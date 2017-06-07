@@ -1,6 +1,6 @@
 var Q = require("q");
 var _ = require("lodash");
-var fetch = require("node-fetch");
+var fetchFn = require("node-fetch");
 var logger = require("./logger");
 
 function Reporter() {
@@ -15,6 +15,11 @@ var ADMIRAL_RUN = process.env.ADMIRAL_RUN_ID;
 var ADMIRAL_CI_BUILD_URL = process.env.ADMIRAL_CI_BUILD_URL;
 var ADMIRAL_RUN_DISPLAY_NAME = process.env.ADMIRAL_RUN_DISPLAY_NAME;
 var isSharded = process.env.ADMIRAL_RUN_ID ? true : false;
+
+var fetch = function (url, options) {
+  logger.debug("Fetch(" + url + ") with options: \n" + JSON.stringify(options,null,2));
+  return fetchFn(url, options);
+};
 
 Reporter.prototype = {
 
@@ -71,6 +76,7 @@ Reporter.prototype = {
         body: JSON.stringify({})
       })
         .then(function (res) {
+          logger.debug("Response JSON from " + ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + ":\n" + JSON.stringify(res.json(), null, 2));
 
           // Bootstrap this phase if it doesn't already exist
           fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE, {
@@ -79,6 +85,7 @@ Reporter.prototype = {
             body: JSON.stringify({})
           })
             .then(function (res) {
+              logger.debug("Response JSON from " + ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + ":\n" + JSON.stringify(res.json(), null, 2));
 
               // Bootstrap a new run or assume an existing run
               fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run", {
@@ -87,7 +94,9 @@ Reporter.prototype = {
                 body: JSON.stringify(self.runOptions)
               })
                 .then(function (res) {
-                  return res.json();
+                  const json = res.json();
+                  logger.debug("Response JSON from " + ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run" + ":\n" + JSON.stringify(json, null, 2));
+                  return json;
                 })
                 .then(function (json) {
                   // NOTE: We no longer set ADMIRAL_RUN to json._id
@@ -211,11 +220,9 @@ Reporter.prototype = {
           body: JSON.stringify(result)
         })
           .then(function (res) {
-            logger.debug("parse json from /result");
-            return res.json();
-          })
-          .then(function (json) {
-            logger.debug("got json back from /result:", json);
+            const json = res.json();
+            logger.debug("Response JSON from " + ADMIRAL_URL + "api/result/" + ADMIRAL_RUN + ":\n" + JSON.stringify(json, null, 2));
+            return json;
           })
           .catch(function (e) {
             logger.err("Exception while sending data to admiral2: ");
@@ -252,6 +259,9 @@ Reporter.prototype = {
         body: JSON.stringify(self.runOptions)
       })
         .then(function (res) {
+          const json = res.json();
+          logger.debug("Response JSON from " + ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run/" + ADMIRAL_RUN + "/finish" + ":\n" + JSON.stringify(json, null, 2));
+
           var reportURL = ADMIRAL_URL + "run/" + ADMIRAL_RUN;
           logger.log("Visualized test suite results available at: " + reportURL);
           return deferred.resolve();
