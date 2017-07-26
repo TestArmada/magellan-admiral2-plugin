@@ -15,6 +15,8 @@ This is a plugin to allow `magellan` test runs to report to the Admiral2 dashboa
 |ADMIRAL_RUN_DISPLAY_NAME|optional|A description of the build that a given run represents|i.e `PR #26 - add unit tests`|
 |ADMIRAL_RUN_ID|optional|A unique identifier to tie together multiple parallel instances of the reporter into a single report|a uuid string, i.e. `462E43EA-002B-4F4B-A711-261B9894E4AA`|
 |ADMIRAL_REPORTER_DEBUG|optional|enable detailed logging for debugging|leave undefined or set to `1`|
+|ADMIRAL_LOGIN|optional|login to make auth request to admiral|leave undefined or set to your login|
+|ADMIRAL_PASSWORD|optional|password to make auth request to admiral|leave undefined or set to your password|
 
 ## Licenses
 
