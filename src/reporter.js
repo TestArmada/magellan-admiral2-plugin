@@ -27,7 +27,15 @@ var auth = function () {
   if (ADMIRAL_LOGIN !== null && ADMIRAL_PASSWORD !== null) {
     return `Basic ${new Buffer(`${ADMIRAL_LOGIN}:${ADMIRAL_PASSWORD}`).toString('base64')}`;
   }
-   return ''; 
+   return null; 
+}
+
+var headers = function () {
+  var result = { "Content-Type": "application/json"};
+  if (auth()) {
+    result.authorization = auth();
+  }
+  return result;
 }
 
 Reporter.prototype = {
@@ -80,7 +88,7 @@ Reporter.prototype = {
 
       // Bootstrap this project if it doesn't already exist
       fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT, {
-        headers: { "Content-Type": "application/json", "authorization": auth()},
+        headers: headers(),
         method: "POST",
         body: JSON.stringify({})
       })
@@ -89,7 +97,7 @@ Reporter.prototype = {
 
           // Bootstrap this phase if it doesn't already exist
           fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE, {
-            headers: { "Content-Type": "application/json", "authorization": auth()},
+            headers: headers(),
             method: "POST",
             body: JSON.stringify({})
           })
@@ -98,7 +106,7 @@ Reporter.prototype = {
 
               // Bootstrap a new run or assume an existing run
               fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run", {
-                headers: { "Content-Type": "application/json", "authorization": auth()},
+                headers: headers(),
                 method: "POST",
                 body: JSON.stringify(self.runOptions)
               })
@@ -224,7 +232,7 @@ Reporter.prototype = {
         logger.debug("Sending result object: ", JSON.stringify(result, null, 2));
 
         fetch(ADMIRAL_URL + "api/result/" + ADMIRAL_RUN, {
-          headers: { "Content-Type": "application/json", "authorization": auth()},
+          headers: headers(),
           method: "POST",
           body: JSON.stringify(result)
         })
@@ -263,7 +271,7 @@ Reporter.prototype = {
       });
 
       fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run/" + ADMIRAL_RUN + "/finish", {
-        headers: { "Content-Type": "application/json", "authorization": auth()},
+        headers: headers(),
         method: "POST",
         body: JSON.stringify(self.runOptions)
       })
