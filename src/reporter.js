@@ -7,8 +7,8 @@ function Reporter() {
 }
 
 var ADMIRAL_URL = process.env.ADMIRAL_URL;
-var ADMIRAL_PROJECT = process.env.ADMIRAL_PROJECT.replace(%/%g, "-");
-var ADMIRAL_PHASE = process.env.ADMIRAL_PHASE.replace(%/%g, "-");
+var ADMIRAL_PROJECT = process.env.ADMIRAL_PROJECT;
+var ADMIRAL_PHASE = process.env.ADMIRAL_PHASE;
 
 // Optional
 var ADMIRAL_RUN = process.env.ADMIRAL_RUN_ID.replace(%/%g, "-");
@@ -87,7 +87,7 @@ Reporter.prototype = {
       }
 
       // Bootstrap this project if it doesn't already exist
-      fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT, {
+      fetch(ADMIRAL_URL + "api/project/" + encodeURIComponent(ADMIRAL_PROJECT), {
         headers: headers(),
         method: "POST",
         body: JSON.stringify({})
@@ -96,7 +96,7 @@ Reporter.prototype = {
           logger.debug("Response JSON from " + ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + ":\n" + JSON.stringify(res.json(), null, 2));
 
           // Bootstrap this phase if it doesn't already exist
-          fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE, {
+          fetch(ADMIRAL_URL + "api/project/" + encodeURIComponent(ADMIRAL_PROJECT) + "/" + encodeURIComponent(ADMIRAL_PHASE), {
             headers: headers(),
             method: "POST",
             body: JSON.stringify({})
@@ -105,7 +105,7 @@ Reporter.prototype = {
               logger.debug("Response JSON from " + ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + ":\n" + JSON.stringify(res.json(), null, 2));
 
               // Bootstrap a new run or assume an existing run
-              fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run", {
+              fetch(ADMIRAL_URL + "api/project/" + encodeURIComponent(ADMIRAL_PROJECT) + "/" + encodeURIComponent(ADMIRAL_PHASE) + "/run", {
                 headers: headers(),
                 method: "POST",
                 body: JSON.stringify(self.runOptions)
@@ -231,7 +231,7 @@ Reporter.prototype = {
         logger.debug("Sending to: " + ADMIRAL_URL + "api/result/" + ADMIRAL_RUN);
         logger.debug("Sending result object: ", JSON.stringify(result, null, 2));
 
-        fetch(ADMIRAL_URL + "api/result/" + ADMIRAL_RUN, {
+        fetch(ADMIRAL_URL + "api/result/" + encodeURIComponent(ADMIRAL_RUN), {
           headers: headers(),
           method: "POST",
           body: JSON.stringify(result)
@@ -270,7 +270,7 @@ Reporter.prototype = {
         });
       });
 
-      fetch(ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run/" + ADMIRAL_RUN + "/finish", {
+      fetch(ADMIRAL_URL + "api/project/" + encodeURIComponent(ADMIRAL_PROJECT) + "/" + encodeURIComponent(ADMIRAL_PHASE) + "/run/" + encodeURIComponent(ADMIRAL_RUN) + "/finish", {
         headers: headers(),
         method: "POST",
         body: JSON.stringify(self.runOptions)
