@@ -11,7 +11,7 @@ var ADMIRAL_PROJECT = process.env.ADMIRAL_PROJECT;
 var ADMIRAL_PHASE = process.env.ADMIRAL_PHASE;
 
 // Optional
-var ADMIRAL_RUN = process.env.ADMIRAL_RUN_ID.replace(%/%g, "-");
+var ADMIRAL_RUN = process.env.ADMIRAL_RUN_ID;
 var ADMIRAL_CI_BUILD_URL = process.env.ADMIRAL_CI_BUILD_URL;
 var ADMIRAL_RUN_DISPLAY_NAME = process.env.ADMIRAL_RUN_DISPLAY_NAME;
 var ADMIRAL_LOGIN = process.env.ADMIRAL_LOGIN;
