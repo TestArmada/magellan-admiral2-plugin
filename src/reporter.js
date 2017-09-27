@@ -7,6 +7,7 @@ function Reporter() {
 }
 
 var ADMIRAL_URL = process.env.ADMIRAL_URL;
+var ADMIRAL_UI_URL = process.env.ADMIRAL_UI_URL;
 var ADMIRAL_PROJECT = process.env.ADMIRAL_PROJECT;
 var ADMIRAL_PHASE = process.env.ADMIRAL_PHASE;
 
@@ -63,6 +64,14 @@ Reporter.prototype = {
       logger.err("ADMIRAL_URL needs to be an absolute url");
       logger.warn("All following messages would be ignored");
       deferred.reject();
+
+    } else if (!ADMIRAL_UI_URL) {
+
+      this.ignoreMessages = true;
+      logger.err("ADMIRAL_UI_URL needs to be an absolute url");
+      logger.warn("All following messages would be ignored");
+      deferred.reject();
+
     } else if (!ADMIRAL_PROJECT) {
 
       this.ignoreMessages = true;
@@ -279,7 +288,7 @@ Reporter.prototype = {
           const json = res.json();
           logger.debug("Response JSON from " + ADMIRAL_URL + "api/project/" + ADMIRAL_PROJECT + "/" + ADMIRAL_PHASE + "/run/" + ADMIRAL_RUN + "/finish" + ":\n" + JSON.stringify(json, null, 2));
 
-          var reportURL = ADMIRAL_URL + "run/" + ADMIRAL_RUN;
+          var reportURL = ADMIRAL_UI_URL + "run/" + ADMIRAL_RUN;
           logger.log("Visualized test suite results available at: " + reportURL);
           return deferred.resolve();
         })
