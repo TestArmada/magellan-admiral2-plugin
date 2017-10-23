@@ -193,43 +193,29 @@ Reporter.prototype = {
         // An individual test has finished running
         var resultURL = ADMIRAL_CI_BUILD_URL || "";
 
-        // This is an URL for an external BaaS or DaaS system, like Saucelabs, browserstack, etc.
-        // It is possible for this to be non-existent because sometimes tests fail well before
-        // they've been able to establish a connection to the BaaS provider.
-        var sauceURL = "";
-        if (message.metadata) {
-          sauceURL = message.metadata.resultURL ? message.metadata.resultURL : "";
-        }
+        // Get SauceLabs session id for this test session
+        var sessionId = message.metadata && message.metadata.sessionId;
 
         var result = {
           test: message.name,
-          environments: {}
+          environments: {
+            [test.profile.id]: {
+              retries: test.attempts,
+              resultURL,
+              sessionId
+            }
+          }
         };
 
         if (message.passed) {
           // We've finished a test and it passed!
-          result.environments[test.profile.id] = {
-            status: "pass",
-            retries: test.attempts,
-            resultURL,
-            sauceURL
-          };
+          result.environments[test.profile.id].status = "pass";
         } else if (test.attempts === test.maxAttempts - 1) {
           // Is this our last attempt ever? Then mark the test as finished and failed.
-          result.environments[test.profile.id] = {
-            status: "fail",
-            retries: test.attempts,
-            resultURL,
-            sauceURL
-          };
+          result.environments[test.profile.id].status = "fail";
         } else {
           // We've failed a test and we're going to retry it
-          result.environments[test.profile.id] = {
-            status: "retry",
-            retries: test.attempts,
-            resultURL,
-            sauceURL
-          };
+          result.environments[test.profile.id].status = "retry";
         }
 
         if (!self.results[message.name]) {
