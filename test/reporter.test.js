@@ -117,7 +117,7 @@ describe('Reporter', function() {
                 .filteringRequestBody(function(body) {
                   var content = JSON.parse(body);
                   assert.equal('fail', content.environments.master.status);
-                  assert.equal('Running:ERROR_STACK', content.environments.master.error);
+                  assert.equal('ERROR_STACK', content.environments.master.error);
                   done();
                   return body;
                 })
@@ -144,7 +144,7 @@ describe('Reporter', function() {
       },
       stdout:{
         on: function(data, fn){
-          fn('Running:ERROR_STACK[INFO]');
+          fn('ERROR_STACK');
         }
       }
     };
