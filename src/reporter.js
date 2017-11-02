@@ -39,24 +39,6 @@ var headers = function () {
   return result;
 }
 
-var formatError = function(error){
-  if(!error){
-    return error;
-  }
-/*
-  let startIndex = error.indexOf('Running:');
-  if(startIndex > -1){
-    error = error.substring(startIndex);
-  }
-
-  let endIndex = error.indexOf('[INFO]');
-  if(endIndex > -1){
-    error = error.substring(0, endIndex);
-  }
-*/
-  return error;
-}
-
 Reporter.prototype = {
 
   initialize: function () {
@@ -236,7 +218,7 @@ Reporter.prototype = {
         } else if (test.attempts === test.maxAttempts - 1) {
           // Is this our last attempt ever? Then mark the test as finished and failed.
           result.environments[test.profile.id].status = "fail";
-          result.environments[test.profile.id].error = formatError(test.stdout);
+          result.environments[test.profile.id].error = test.stdout;
         } else {
           // We've failed a test and we're going to retry it
           result.environments[test.profile.id].status = "retry";
