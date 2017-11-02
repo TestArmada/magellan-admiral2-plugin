@@ -43,7 +43,7 @@ var formatError = function(error){
   if(!error){
     return error;
   }
-
+/*
   let startIndex = error.indexOf('Running:');
   if(startIndex > -1){
     error = error.substring(startIndex);
@@ -53,7 +53,7 @@ var formatError = function(error){
   if(endIndex > -1){
     error = error.substring(0, endIndex);
   }
-
+*/
   return error;
 }
 
