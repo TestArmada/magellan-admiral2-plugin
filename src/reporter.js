@@ -166,6 +166,11 @@ Reporter.prototype = {
   listenTo: function (testRun, test, source) {
     // Every time a message is received regarding this test, we also get the test object itself so
     // that we're able to reason about retries, worker index, etc.
+    if(source && source.stdout){
+      source.stdout.on("data", function (chunk) {
+        test.stdout += chunk.toString('utf8');
+      });
+    }
     source.addListener("message", this._handleMessage.bind(this, test));
   },
 
@@ -213,6 +218,7 @@ Reporter.prototype = {
         } else if (test.attempts === test.maxAttempts - 1) {
           // Is this our last attempt ever? Then mark the test as finished and failed.
           result.environments[test.profile.id].status = "fail";
+          result.environments[test.profile.id].log = test.stdout;
         } else {
           // We've failed a test and we're going to retry it
           result.environments[test.profile.id].status = "retry";

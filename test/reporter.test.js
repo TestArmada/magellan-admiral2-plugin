@@ -111,4 +111,90 @@ describe('Reporter', function() {
     admiralNock.done();
   });
 
+  it('should handle error stack on fail', function(done) {
+
+    var admiralNock = nock(ADMIRAL_URL)
+                .filteringRequestBody(function(body) {
+                  var content = JSON.parse(body);
+                  assert.equal('fail', content.environments.master.status);
+                  assert.equal('ERROR_STACK', content.environments.master.log);
+                  done();
+                  return body;
+                })
+                .post('/api/result/'+ADMIRAL_RUN_ID)
+                .reply(200, {});
+
+    var test = {
+      profile: {
+        id: 'master'
+      },
+      maxAttempts: 2,
+      attempts: 1,
+      stdout:''
+    };
+    var message ={
+      type: 'worker-status',
+      status: 'finished',
+      passed: false,
+      metadata: {}
+    }
+    var source = {
+      addListener: function(m, method){
+        method(message);
+      },
+      stdout:{
+        on: function(data, fn){
+          fn('ERROR_STACK');
+        }
+      }
+    };
+
+    reporter.listenTo({}, test, source);
+
+    admiralNock.done();
+  });
+
+  it('should not have error stack on success', function(done) {
+
+    var admiralNock = nock(ADMIRAL_URL)
+                .filteringRequestBody(function(body) {
+                  var content = JSON.parse(body);
+                  assert.equal('pass', content.environments.master.status);
+                  assert.ok(!content.environments.master.log,"Expected no error, but error was: " + content.environments.master.log);
+                  done();
+                  return body;
+                })
+                .post('/api/result/'+ADMIRAL_RUN_ID)
+                .reply(200, {});
+
+    var test = {
+      profile: {
+        id: 'master'
+      },
+      maxAttempts: 2,
+      attempts: 1,
+      stdout:''
+    };
+    var message ={
+      type: 'worker-status',
+      status: 'finished',
+      passed: true,
+      metadata: {}
+    }
+    var source = {
+      addListener: function(m, method){
+        method(message);
+      },
+      stdout:{
+        on: function(data, fn){
+          fn('ERROR_STACK');
+        }
+      }
+    };
+
+    reporter.listenTo({}, test, source);
+
+    admiralNock.done();
+  });
+
 });
