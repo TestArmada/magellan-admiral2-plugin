@@ -218,7 +218,7 @@ Reporter.prototype = {
         } else if (test.attempts === test.maxAttempts - 1) {
           // Is this our last attempt ever? Then mark the test as finished and failed.
           result.environments[test.profile.id].status = "fail";
-          result.environments[test.profile.id].error = test.stdout;
+          result.environments[test.profile.id].log = test.stdout;
         } else {
           // We've failed a test and we're going to retry it
           result.environments[test.profile.id].status = "retry";

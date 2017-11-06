@@ -117,7 +117,7 @@ describe('Reporter', function() {
                 .filteringRequestBody(function(body) {
                   var content = JSON.parse(body);
                   assert.equal('fail', content.environments.master.status);
-                  assert.equal('ERROR_STACK', content.environments.master.error);
+                  assert.equal('ERROR_STACK', content.environments.master.log);
                   done();
                   return body;
                 })
@@ -160,7 +160,7 @@ describe('Reporter', function() {
                 .filteringRequestBody(function(body) {
                   var content = JSON.parse(body);
                   assert.equal('pass', content.environments.master.status);
-                  assert.ok(!content.environments.master.error,"Expected no error, but error was: " + content.environments.master.error);
+                  assert.ok(!content.environments.master.log,"Expected no error, but error was: " + content.environments.master.log);
                   done();
                   return body;
                 })
