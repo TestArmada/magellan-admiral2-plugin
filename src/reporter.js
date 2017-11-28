@@ -25,7 +25,7 @@ var fetch = function (url, options) {
 };
 
 var auth = function () {
-  if (ADMIRAL_LOGIN !== null && ADMIRAL_PASSWORD !== null) {
+  if (!!ADMIRAL_LOGIN && !!ADMIRAL_PASSWORD) {
     return `Basic ${new Buffer(`${ADMIRAL_LOGIN}:${ADMIRAL_PASSWORD}`).toString('base64')}`;
   }
    return null; 
