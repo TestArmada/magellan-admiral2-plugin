@@ -22,9 +22,7 @@ var ADMIRAL_TIMEOUT = process.env.ADMIRAL_TIMEOUT;
 
 var fetch = function (url, options) {
   logger.debug("Fetch(" + url + ") with options: \n" + JSON.stringify(options,null,2));
-  if(ADMIRAL_TIMEOUT && typeof ADMIRAL_TIMEOUT === "number"){
-    options.timeout = parseInt(ADMIRAL_TIMEOUT);
-  }
+  options.timeout = ADMIRAL_TIMEOUT || 30000;
   return fetchFn(url, options);
 };
 
