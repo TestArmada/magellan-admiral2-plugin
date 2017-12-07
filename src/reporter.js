@@ -18,9 +18,11 @@ var ADMIRAL_RUN_DISPLAY_NAME = process.env.ADMIRAL_RUN_DISPLAY_NAME;
 var ADMIRAL_LOGIN = process.env.ADMIRAL_LOGIN;
 var ADMIRAL_PASSWORD = process.env.ADMIRAL_PASSWORD;
 var isSharded = process.env.ADMIRAL_RUN_ID ? true : false;
+var ADMIRAL_TIMEOUT = process.env.ADMIRAL_TIMEOUT;
 
 var fetch = function (url, options) {
   logger.debug("Fetch(" + url + ") with options: \n" + JSON.stringify(options,null,2));
+  options.timeout = ADMIRAL_TIMEOUT || 30000;
   return fetchFn(url, options);
 };
 
