@@ -1,6 +1,6 @@
 {
   "name": "testarmada-magellan-admiral2-plugin",
-  "version": "4.2.3",
+  "version": "4.2.4",
   "description": "Magellan reporter plugin that provides Admiral2 dashboard support",
   "main": "index.js",
   "scripts": {
