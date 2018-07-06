@@ -19,7 +19,5 @@ This is a plugin to allow `magellan` test runs to report to the Admiral2 dashboa
 |ADMIRAL_LOGIN|optional|login to make auth request to admiral|leave undefined or set to your login|
 |ADMIRAL_PASSWORD|optional|password to make auth request to admiral|leave undefined or set to your password|
 
-## Licenses
-
-All code not otherwise specified is Copyright Wal-Mart Stores, Inc.
-Released under the [Apache2](./LICENSE) License.
+## License
+Documentation in this project is licensed under Creative Commons Attribution 4.0 International License. Full details available at https://creativecommons.org/licenses/by/4.0
