@@ -1,3 +1,7 @@
+# :warning::warning: DEPRECATED :warning::warning:
+
+This project, and it's related TestArmada projects, will no longer be supported. No further work from the owners will be done, and no PRs will be reviewed.
+
 # Admiral2 Reporter Plugin for Magellan
 
 This is a plugin to allow `magellan` test runs to report to the Admiral2 dashboard system.
